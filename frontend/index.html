@@ -3,40 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TruthBot Widget</title>
-    <link rel="stylesheet" href="style.css">
+    <title>TruthBot - AI Misinformation Detector</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="truthbot-widget">
-        <h2 class="widget-title">🧐 TruthBot Analyzer</h2>
-        <p class="ethical-note">Analyze text snippets, tweets, or messages. **This tool provides an AI-driven assessment, not an absolute truth. Always verify claims.**</p>
-
-        <textarea id="text-input" placeholder="Paste the text or message you want to analyze here..." rows="6"></textarea>
-        
-        <button id="analyze-button">Analyze Content</button>
-        
-        <div id="loading-indicator" class="hidden">Analyzing...</div>
-
-        <div id="result-card" class="result-card hidden">
-            <h3 class="result-label" id="label-display"></h3>
-            
-            <p><strong>Confidence:</strong> <span id="confidence-display"></span></p>
-            
-            <h4>Reasons for this assessment:</h4>
-            <ul id="reasons-list">
-                </ul>
-
-            <div class="tip-section">
-                <strong>💡 Digital Literacy Tip:</strong> <span id="tip-display"></span>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <h1>🔍 TruthBot</h1>
+                <p class="tagline">AI-Powered Misinformation Detection</p>
             </div>
-        </div>
+        </header>
 
-        <div id="error-message" class="error-message hidden">
-            <p><strong>⚠️ Error:</strong> <span id="error-text"></span></p>
-        </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="text">Text Analysis</button>
+                    <button class="tab-btn" data-tab="file">File Upload</button>
+                </div>
 
+                <!-- Text Input Tab -->
+                <div class="tab-content active" id="text-tab">
+                    <div class="input-group">
+                        <label for="text-input">Enter text to analyze:</label>
+                        <textarea 
+                            id="text-input" 
+                            placeholder="Paste a tweet, article excerpt, or any text you want to verify..."
+                            rows="8"
+                        ></textarea>
+                        <button class="btn btn-primary" id="analyze-text-btn">
+                            <span>Analyze Text</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Upload Tab -->
+                <div class="tab-content" id="file-tab">
+                    <div class="upload-zone" id="upload-zone">
+                        <div class="upload-icon">📄</div>
+                        <p class="upload-text">Drag & drop your file here</p>
+                        <p class="upload-subtext">or click to browse</p>
+                        <input type="file" id="file-input" accept=".txt,.pdf,.docx,.doc,.jpg,.jpeg,.png,.gif" hidden>
+                        <button class="btn btn-secondary" id="browse-btn">Browse Files</button>
+                    </div>
+                    <div class="file-info" id="file-info" style="display: none;">
+                        <p><strong>Selected:</strong> <span id="file-name"></span></p>
+                        <button class="btn btn-primary" id="analyze-file-btn">
+                            <span>Analyze File</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading Indicator -->
+            <div class="loading" id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzing content...</p>
+            </div>
+
+            <!-- Results Section -->
+            <section class="results-section" id="results-section" style="display: none;">
+                <h2>Analysis Results</h2>
+                
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="reliability-badge" id="reliability-badge">
+                            <span class="badge-icon">⚠️</span>
+                            <span class="badge-text" id="badge-text">Unknown</span>
+                        </div>
+                        <div class="confidence-score">
+                            <span class="confidence-label">Confidence:</span>
+                            <span class="confidence-value" id="confidence-value">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="result-body">
+                        <div class="content-preview">
+                            <h3>Content Preview</h3>
+                            <p id="content-preview"></p>
+                        </div>
+
+                        <div class="reasons">
+                            <h3>Analysis Reasons</h3>
+                            <ul id="reasons-list"></ul>
+                        </div>
+
+                        <div class="tips">
+                            <h3>💡 Verification Tips</h3>
+                            <ul id="tips-list"></ul>
+                        </div>
+
+                        <div class="analysis-details" id="analysis-details-section">
+                            <h3>Detailed Analysis</h3>
+                            <p id="analysis-details"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" id="new-analysis-btn">Analyze Another</button>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>TruthBot - Nuit de l'Info 2024 | AI4GOOD Challenge</p>
+            <p class="disclaimer">⚠️ This tool provides AI-assisted analysis. Always verify through multiple sources.</p>
+        </footer>
     </div>
 
-    <script src="script.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
