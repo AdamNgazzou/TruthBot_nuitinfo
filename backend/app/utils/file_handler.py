@@ -5,6 +5,9 @@ import os
 from pathlib import Path
 from fastapi import UploadFile
 from app.config import UPLOAD_FOLDER, ALLOWED_EXTENSIONS, MAX_FILE_SIZE
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FileHandler:
@@ -14,6 +17,7 @@ class FileHandler:
         """Initialize file handler"""
         # Create upload folder if it doesn't exist
         Path(UPLOAD_FOLDER).mkdir(parents=True, exist_ok=True)
+        logger.info(f"Upload folder: {UPLOAD_FOLDER}")
     
     def is_allowed_file(self, filename: str) -> bool:
         """
@@ -26,7 +30,9 @@ class FileHandler:
             True if allowed, False otherwise
         """
         ext = Path(filename).suffix.lower()
-        return ext in ALLOWED_EXTENSIONS
+        allowed = ext in ALLOWED_EXTENSIONS
+        logger.info(f"File {filename} - extension: {ext} - allowed: {allowed}")
+        return allowed
     
     def save_file(self, file: UploadFile, file_id: str) -> str:
         """
@@ -42,13 +48,17 @@ class FileHandler:
         ext = Path(file.filename).suffix.lower()
         file_path = Path(UPLOAD_FOLDER) / f"{file_id}{ext}"
         
+        logger.info(f"Saving file to: {file_path}")
+        
         # Read and save file
         with open(file_path, 'wb') as f:
             contents = file.file.read()
+            logger.info(f"Read {len(contents)} bytes from uploaded file")
             if len(contents) > MAX_FILE_SIZE:
                 raise Exception("File size exceeds maximum allowed")
             f.write(contents)
         
+        logger.info(f"File saved successfully: {file_path}")
         return str(file_path)
     
     def get_file_path(self, file_id: str) -> Path:

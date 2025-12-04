@@ -5,6 +5,8 @@ Handles communication with Google Gemini API
 import google.generativeai as genai
 from app.config import GEMINI_API_KEY
 from PIL import Image
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import io
 
 
@@ -17,6 +19,15 @@ class GeminiService:
             genai.configure(api_key=GEMINI_API_KEY)
         self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.vision_model = genai.GenerativeModel('gemini-2.0-flash')
+        self._executor = ThreadPoolExecutor(max_workers=2)
+    
+    def _generate_sync(self, prompt: str) -> str:
+        """Synchronous call to Gemini API"""
+        import sys
+        print("[GeminiService] Sending request to Gemini API...", flush=True)
+        response = self.model.generate_content(prompt)
+        print("[GeminiService] Response received from Gemini API", flush=True)
+        return response.text
     
     async def analyze_text(self, content: str) -> str:
         """
@@ -54,9 +65,11 @@ Please provide a structured analysis with the following sections:
 Be specific and helpful in your analysis."""
         
         try:
-            response = self.model.generate_content(prompt)
-            return response.text
+            # Run in thread to avoid blocking
+            result = await asyncio.to_thread(self._generate_sync, prompt)
+            return result
         except Exception as e:
+            print(f"[GeminiService] Error: {str(e)}", flush=True)
             return f"Analysis could not be completed: {str(e)}. Please verify the content manually through trusted sources."
     
     async def analyze_text_with_sources(self, content: str, search_context: str = "") -> str:
@@ -113,9 +126,11 @@ IMPORTANT:
 Be specific and helpful in your analysis."""
         
         try:
-            response = self.model.generate_content(prompt)
-            return response.text
+            # Run in thread to avoid blocking
+            result = await asyncio.to_thread(self._generate_sync, prompt)
+            return result
         except Exception as e:
+            print(f"[GeminiService] Error: {str(e)}", flush=True)
             return f"Analysis could not be completed: {str(e)}. Please verify the content manually through trusted sources."
     
     async def analyze_image(self, image_path: str) -> str:
@@ -152,10 +167,16 @@ Please provide a structured analysis with:
 
 Be thorough and specific in your analysis."""
         
-        try:
-            # Load and process image
+        def _analyze_image_sync():
+            print("[GeminiService] Analyzing image...", flush=True)
             img = Image.open(image_path)
             response = self.vision_model.generate_content([prompt, img])
+            print("[GeminiService] Image analysis complete", flush=True)
             return response.text
+        
+        try:
+            result = await asyncio.to_thread(_analyze_image_sync)
+            return result
         except Exception as e:
+            print(f"[GeminiService] Image error: {str(e)}", flush=True)
             return f"Image analysis could not be completed: {str(e)}. Please verify the image manually."

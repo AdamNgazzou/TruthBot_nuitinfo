@@ -44,6 +44,11 @@ const api = {
      */
     async analyzeFile(file) {
         try {
+            console.log('📤 Uploading file to server...');
+            console.log('   File name:', file.name);
+            console.log('   File size:', file.size, 'bytes');
+            console.log('   File type:', file.type);
+            
             const formData = new FormData();
             formData.append('file', file);
 
@@ -52,13 +57,19 @@ const api = {
                 body: formData
             });
 
+            console.log('📥 Server response status:', response.status);
+            
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
+                console.error('❌ Upload error:', error);
                 throw new Error(error.detail || `Upload error: ${response.status}`);
             }
 
-            return await response.json();
+            const result = await response.json();
+            console.log('✅ Upload successful, result:', result);
+            return result;
         } catch (error) {
+            console.error('❌ File upload failed:', error);
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
                 throw new Error('Cannot connect to server. Please ensure the backend is running.');
             }

@@ -36,18 +36,33 @@ class AnalyzerService:
         # Step 1: Extract content
         content = self.extractor_service.extract_text(file_path, file_type)
         
+        # Truncate very long content to avoid API limits (max ~15000 chars for analysis)
+        max_content_length = 15000
+        if len(content) > max_content_length:
+            print(f"[AnalyzerService] Content truncated from {len(content)} to {max_content_length} chars")
+            content = content[:max_content_length] + "\n\n[... content truncated for analysis ...]"
+        
+        print(f"[AnalyzerService] Step 2: Web search (enabled: {self.use_web_search})", flush=True)
+        
         # Step 2: Web search for verification (if enabled)
         search_context = ""
         if self.use_web_search:
+            print("[AnalyzerService] Searching web for verification...", flush=True)
             search_results = await self.search_service.verify_claim(content[:200])
             search_context = self.search_service.format_sources_for_analysis(search_results)
+            print(f"[AnalyzerService] Web search complete, context length: {len(search_context)}", flush=True)
+        
+        print("[AnalyzerService] Step 3: Calling Gemini API...", flush=True)
         
         # Step 3: Analyze with Gemini (include search results)
         analysis = await self.gemini_service.analyze_text_with_sources(content, search_context)
         
+        print(f"[AnalyzerService] Step 4: Parsing results (analysis length: {len(analysis)})", flush=True)
+        
         # Step 4: Parse results
         result = self._parse_analysis(content, analysis, search_context)
         
+        print(f"[AnalyzerService] Done! Result: {result.label}", flush=True)
         return result
     
     async def analyze_image(self, file_path: str) -> AnalysisResult:

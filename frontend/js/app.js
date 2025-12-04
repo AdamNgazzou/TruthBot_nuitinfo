@@ -39,7 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // Tab Switching
 function initTabs() {
     tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const tabName = btn.dataset.tab;
             
             // Update active tab button
@@ -68,7 +71,10 @@ function initTextInput() {
     });
     
     // Analyze button
-    analyzeTextBtn.addEventListener('click', async () => {
+    analyzeTextBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const text = textInput.value.trim();
         
         if (!text) {
@@ -88,7 +94,9 @@ function initTextInput() {
 // File Upload
 function initFileUpload() {
     // Click to browse
-    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('click', () => {
+        fileInput.click();
+    });
     
     // Drag and drop
     uploadZone.addEventListener('dragover', (e) => {
@@ -124,7 +132,10 @@ function initFileUpload() {
     });
     
     // Analyze file button
-    analyzeFileBtn.addEventListener('click', async () => {
+    analyzeFileBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         if (!selectedFile) {
             showError('Please select a file first');
             return;
@@ -202,34 +213,50 @@ function initResults() {
 
 // Analyze content
 async function analyzeContent(type, content) {
-    showLoading();
+    console.log('🚀 Starting analysis...', type);
+    showLoading(type === 'file' ? 'Uploading and analyzing file...' : 'Analyzing text...');
     hideError();
     hideResults();
     
     try {
         let result;
         if (type === 'text') {
+            console.log('📝 Analyzing text...');
             result = await api.analyzeText(content);
+            console.log('✅ Text analysis complete:', result);
         } else {
+            console.log('📁 Uploading file:', content.name, 'Size:', formatFileSize(content.size));
             result = await api.analyzeFile(content);
+            console.log('✅ File analysis complete:', result);
         }
         
+        console.log('📊 About to display results...');
         displayResults(result);
     } catch (error) {
+        console.error('❌ Analysis error:', error);
         showError(error.message || 'Analysis failed. Please try again.');
     } finally {
+        console.log('🏁 Analysis finished, hiding loading...');
         hideLoading();
     }
 }
 
 // Display results
 function displayResults(result) {
+    console.log('📊 Displaying results:', result);
+    
     // Update badge
     const badge = document.getElementById('reliability-badge');
     const badgeIcon = document.getElementById('badge-icon');
     const badgeText = document.getElementById('badge-text');
     
+    if (!badge || !badgeIcon || !badgeText) {
+        console.error('❌ Badge elements not found!');
+        return;
+    }
+    
     const label = result.label || 'unknown';
+    console.log('Label:', label);
     badge.className = 'reliability-badge ' + label.replace(/_/g, '-');
     badgeText.textContent = formatLabel(label);
     badgeIcon.textContent = getLabelIcon(label);
@@ -287,7 +314,13 @@ function displayResults(result) {
     }
     
     // Show results section
+    console.log('Showing results section...');
+    if (!resultsSection) {
+        console.error('❌ resultsSection not found!');
+        return;
+    }
     resultsSection.classList.add('visible');
+    console.log('Results section classes:', resultsSection.className);
     
     // Scroll to results
     setTimeout(() => {
@@ -318,8 +351,13 @@ function getLabelIcon(label) {
 }
 
 // UI Helpers
-function showLoading() {
+function showLoading(message = 'Analyzing...') {
     loading.classList.add('visible');
+    // Update loading message if element exists
+    const loadingText = loading.querySelector('.loading-text');
+    if (loadingText) {
+        loadingText.textContent = message;
+    }
     analyzeTextBtn.disabled = true;
     analyzeFileBtn.disabled = true;
 }

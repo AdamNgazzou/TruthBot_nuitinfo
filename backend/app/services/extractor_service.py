@@ -99,13 +99,18 @@ class ExtractorService:
         """
         file_type = file_type.lower()
         
+        print(f"[ExtractorService] Extracting text from {file_type} file: {file_path}")
+        
         if file_type == 'pdf':
-            return self.extract_from_pdf(file_path)
-        elif file_type == 'docx':
-            return self.extract_from_docx(file_path)
+            text = self.extract_from_pdf(file_path)
+        elif file_type in ['docx', 'doc']:
+            text = self.extract_from_docx(file_path)
         elif file_type == 'txt':
-            return self.extract_from_txt(file_path)
+            text = self.extract_from_txt(file_path)
         elif file_type in ['jpg', 'jpeg', 'png', 'gif']:
-            return self.extract_from_image(file_path)
+            text = self.extract_from_image(file_path)
         else:
             raise ValueError(f"Unsupported file type: {file_type}")
+        
+        print(f"[ExtractorService] Extracted {len(text)} characters")
+        return text

@@ -3,6 +3,7 @@ Web Search Service for fact verification
 Uses Serper.dev API for Google search results
 """
 import aiohttp
+import asyncio
 import os
 from typing import List, Dict, Optional
 from app.config import settings
@@ -41,7 +42,8 @@ class SearchService:
         }
         
         try:
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=10)  # 10 second timeout
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(
                     self.base_url,
                     headers=headers,
@@ -53,6 +55,12 @@ class SearchService:
                     else:
                         print(f"Search API error: {response.status}")
                         return []
+        except aiohttp.ClientError as e:
+            print(f"Search connection error: {e}")
+            return []
+        except asyncio.TimeoutError:
+            print("Search timeout - continuing without web search")
+            return []
         except Exception as e:
             print(f"Search error: {e}")
             return []
