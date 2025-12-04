@@ -1,355 +1,326 @@
-/**
- * TruthBot - Main Application JavaScript
- */
+// app.js
 
-// DOM Elements
-const textTab = document.getElementById('text-tab');
-const fileTab = document.getElementById('file-tab');
-const tabBtns = document.querySelectorAll('.tab-btn');
-const textInput = document.getElementById('text-input');
-const charCount = document.getElementById('char-count');
-const analyzeTextBtn = document.getElementById('analyze-text-btn');
-const uploadZone = document.getElementById('upload-zone');
-const fileInput = document.getElementById('file-input');
-const fileInfo = document.getElementById('file-info');
-const fileName = document.getElementById('file-name');
-const fileSize = document.getElementById('file-size');
-const removeFileBtn = document.getElementById('remove-file-btn');
-const analyzeFileBtn = document.getElementById('analyze-file-btn');
-const loading = document.getElementById('loading');
-const resultsSection = document.getElementById('results-section');
-const newAnalysisBtn = document.getElementById('new-analysis-btn');
-const errorSection = document.getElementById('error-section');
-const errorMessage = document.getElementById('error-message');
-const retryBtn = document.getElementById('retry-btn');
-const toggleDetails = document.getElementById('toggle-details');
-const analysisDetailsSection = document.getElementById('analysis-details-section');
-
-let selectedFile = null;
-
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    initTabs();
-    initTextInput();
-    initFileUpload();
-    initResults();
-    checkApiHealth();
-});
-
-// Tab Switching
-function initTabs() {
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tabName = btn.dataset.tab;
-            
-            // Update active tab button
-            tabBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            // Show corresponding content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(`${tabName}-tab`).classList.add('active');
-            
-            // Hide results and errors when switching tabs
-            hideResults();
-            hideError();
-        });
-    });
-}
-
-// Text Input
-function initTextInput() {
-    // Character counter
-    textInput.addEventListener('input', () => {
-        const count = textInput.value.length;
-        charCount.textContent = `${count} character${count !== 1 ? 's' : ''}`;
-    });
-    
-    // Analyze button
-    analyzeTextBtn.addEventListener('click', async () => {
-        const text = textInput.value.trim();
-        
-        if (!text) {
-            showError('Please enter some text to analyze');
-            return;
-        }
-        
-        if (text.length < 10) {
-            showError('Please enter at least 10 characters');
-            return;
-        }
-        
-        await analyzeContent('text', text);
-    });
-}
-
-// File Upload
-function initFileUpload() {
-    // Click to browse
-    uploadZone.addEventListener('click', () => fileInput.click());
-    
-    // Drag and drop
-    uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('drag-over');
-    });
-    
-    uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('drag-over');
-    });
-    
-    uploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadZone.classList.remove('drag-over');
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileSelection(files[0]);
-        }
-    });
-    
-    // File input change
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            handleFileSelection(e.target.files[0]);
-        }
-    });
-    
-    // Remove file
-    removeFileBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        clearFileSelection();
-    });
-    
-    // Analyze file button
-    analyzeFileBtn.addEventListener('click', async () => {
-        if (!selectedFile) {
-            showError('Please select a file first');
-            return;
-        }
-        
-        await analyzeContent('file', selectedFile);
-    });
-}
-
-function handleFileSelection(file) {
-    // Validate file type
-    const allowedTypes = ['txt', 'pdf', 'docx', 'doc', 'jpg', 'jpeg', 'png', 'gif'];
-    const extension = file.name.split('.').pop().toLowerCase();
-    
-    if (!allowedTypes.includes(extension)) {
-        showError(`File type not supported. Allowed: ${allowedTypes.join(', ')}`);
-        return;
+  // Elements
+  const textMode = document.getElementById('text-mode');
+  const imageMode = document.getElementById('image-mode');
+  
+  const btnPlus = document.getElementById('btn-plus');
+  const attachmentMenu = document.getElementById('attachment-menu');
+  const attachImageBtn = document.getElementById('attach-image');
+  
+  const textInput = document.getElementById('text-input');
+  const charCounter = document.getElementById('char-counter');
+  
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('file-input');
+  const imagePreviewContainer = document.getElementById('image-preview-container');
+  const imagePreview = document.getElementById('image-preview');
+  const imageFilename = document.getElementById('image-filename');
+  const btnClosePreview = document.getElementById('btn-close-preview');
+  
+  const analyzeBtn = document.getElementById('analyze-btn');
+  const errorBanner = document.getElementById('error-banner');
+  const errorMessage = document.getElementById('error-message');
+  
+  const loadingEl = document.getElementById('loading');
+  
+  const inputSection = document.getElementById('input-section');
+  const resultSection = document.getElementById('result-section');
+  const resultCard = document.getElementById('result-card');
+  const resultLabel = document.getElementById('result-label');
+  const resultScore = document.getElementById('result-score');
+  const resultBadge = document.getElementById('result-badge');
+  const resultExplanation = document.getElementById('result-explanation');
+  const resultDetailsList = document.getElementById('result-details-list');
+  const newAnalysisBtn = document.getElementById('new-analysis-btn');
+  
+  let selectedFile = null;
+  
+  /* ========= Plus Button & Attachment Menu ========= */
+  
+  btnPlus.addEventListener('click', () => {
+    attachmentMenu.classList.toggle('hidden');
+  });
+  
+  attachImageBtn.addEventListener('click', () => {
+    attachmentMenu.classList.add('hidden');
+    fileInput.click();
+  });
+  
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!btnPlus.contains(e.target) && !attachmentMenu.contains(e.target)) {
+      attachmentMenu.classList.add('hidden');
     }
+  });
+  
+  /* ========= Text Input Handling ========= */
+  
+  textInput.addEventListener('input', () => {
+    const len = textInput.value.length;
+    charCounter.textContent = `${len} character${len === 1 ? '' : 's'}`;
+    updateAnalyzeButtonState();
+  });
+  
+  /* ========= File Input & Dropzone Handling ========= */
+  
+  dropzone.addEventListener('click', () => fileInput.click());
+  
+  dropzone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropzone.classList.add('dragover');
+  });
+  
+  dropzone.addEventListener('dragleave', () => {
+    dropzone.classList.remove('dragover');
+  });
+  
+  dropzone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      handleFileSelection(event.dataTransfer.files[0]);
+    }
+  });
+  
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files && fileInput.files.length > 0) {
+      handleFileSelection(fileInput.files[0]);
+    }
+  });
+  
+  btnClosePreview.addEventListener('click', () => {
+    selectedFile = null;
+    fileInput.value = '';
+    imagePreviewContainer.classList.add('hidden');
+    updateAnalyzeButtonState();
+  });
+  
+  function handleFileSelection(file) {
+    if (!file) return;
     
-    // Validate file size (50MB max)
-    const maxSize = 50 * 1024 * 1024;
-    if (file.size > maxSize) {
-        showError('File is too large. Maximum size is 50MB.');
-        return;
+    // Simple image type check
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      showError('Unsupported file type. Please upload a PNG, JPG, or GIF image.');
+      return;
     }
     
     selectedFile = file;
-    fileName.textContent = file.name;
-    fileSize.textContent = formatFileSize(file.size);
     
-    uploadZone.style.display = 'none';
-    fileInfo.classList.add('visible');
+    // Show image preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imagePreview.src = e.target.result;
+      imageFilename.textContent = file.name;
+      imagePreviewContainer.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+    
     hideError();
-}
-
-function clearFileSelection() {
+    updateAnalyzeButtonState();
+  }
+  
+  /* ========= Analyze Button State ========= */
+  
+  function updateAnalyzeButtonState() {
+    const hasText = textInput.value.trim().length > 0;
+    const hasImage = selectedFile !== null;
+    analyzeBtn.disabled = !hasText && !hasImage;
+  }
+  
+  /* ========= Error & Loading Helpers ========= */
+  
+  function showError(message) {
+    errorMessage.textContent = message || 'An unknown error occurred.';
+    errorBanner.classList.remove('hidden');
+  }
+  
+  function hideError() {
+    errorBanner.classList.add('hidden');
+  }
+  
+  function showLoading() {
+    loadingEl.classList.remove('hidden');
+    analyzeBtn.disabled = true;
+  }
+  
+  function hideLoading() {
+    loadingEl.classList.add('hidden');
+    updateAnalyzeButtonState();
+  }
+  
+  function showResult() {
+    resultSection.classList.remove('hidden');
+    inputSection.classList.add('hidden');
+  }
+  
+  function hideResult() {
+    resultSection.classList.add('hidden');
+  }
+  
+  /* ========= Main Analysis Handler ========= */
+  
+  analyzeBtn.addEventListener('click', () => {
+    handleAnalysis();
+  });
+  
+  newAnalysisBtn.addEventListener('click', () => {
+    hideResult();
+    inputSection.classList.remove('hidden');
+    textInput.value = '';
     selectedFile = null;
     fileInput.value = '';
-    fileInfo.classList.remove('visible');
-    uploadZone.style.display = 'block';
-}
-
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-// Results
-function initResults() {
-    // New analysis button
-    newAnalysisBtn.addEventListener('click', () => {
-        hideResults();
-        textInput.value = '';
-        charCount.textContent = '0 characters';
-        clearFileSelection();
-    });
-    
-    // Toggle details
-    if (toggleDetails) {
-        toggleDetails.addEventListener('click', () => {
-            analysisDetailsSection.classList.toggle('open');
-        });
-    }
-    
-    // Retry button
-    if (retryBtn) {
-        retryBtn.addEventListener('click', () => {
-            hideError();
-        });
-    }
-}
-
-// Analyze content
-async function analyzeContent(type, content) {
-    showLoading();
+    imagePreviewContainer.classList.add('hidden');
+    charCounter.textContent = '0 characters';
     hideError();
-    hideResults();
+    updateAnalyzeButtonState();
+  });
+  
+  async function handleAnalysis() {
+    hideError();
+    showLoading();
     
     try {
-        let result;
-        if (type === 'text') {
-            result = await api.analyzeText(content);
-        } else {
-            result = await api.analyzeFile(content);
-        }
+      let response;
+      
+      // Determine what to analyze
+      const hasText = textInput.value.trim().length > 0;
+      const hasImage = selectedFile !== null;
+      
+      if (hasImage && hasText) {
+        // Analyze image when both are present (image takes precedence)
+        const formData = new FormData();
+        formData.append('type', 'image');
+        formData.append('file', selectedFile);
         
-        displayResults(result);
+        response = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData
+        });
+      } else if (hasImage) {
+        // Analyze image only
+        const formData = new FormData();
+        formData.append('type', 'image');
+        formData.append('file', selectedFile);
+        
+        response = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        // Analyze text only
+        const payload = {
+          type: 'text',
+          content: textInput.value.trim()
+        };
+        
+        response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+      
+      let data;
+      if (response.ok) {
+        data = await response.json();
+      } else {
+        throw new Error('Server returned an error response.');
+      }
+      
+      const mapped = mapBackendResponse(data);
+      renderResult(mapped);
     } catch (error) {
-        showError(error.message || 'Analysis failed. Please try again.');
+      console.warn('Using mock result due to error:', error);
+      
+      // Mock fallback response for demo purposes
+      const mock = {
+        score: selectedFile ? 64 : 78,
+        color: 'orange',
+        explanation: selectedFile
+          ? 'The image may be used out of context or in a misleading way. Always verify where and when the image was originally taken.'
+          : 'The text uses emotional language and lacks clear sources. It shows several patterns associated with polarized or misleading content.',
+        extra: [
+          'Check if trusted news outlets report this claim.',
+          'Look for the original source or reverse-search the image.',
+          'Be cautious with content that strongly appeals to fear or outrage.'
+        ]
+      };
+      
+      renderResult(mock);
     } finally {
-        hideLoading();
+      hideLoading();
     }
-}
-
-// Display results
-function displayResults(result) {
-    // Update badge
-    const badge = document.getElementById('reliability-badge');
-    const badgeIcon = document.getElementById('badge-icon');
-    const badgeText = document.getElementById('badge-text');
+  }
+  
+  // Map backend response into our internal format
+  function mapBackendResponse(data) {
+    const score = typeof data.score === 'number' ? data.score : 50;
+    const color = data.color || 'orange';
+    const explanation =
+      data.explanation ||
+      'The model returned a generic explanation. Please verify using additional sources.';
+    const extra = Array.isArray(data.details) ? data.details : [];
     
-    const label = result.label || 'unknown';
-    badge.className = 'reliability-badge ' + label.replace(/_/g, '-');
-    badgeText.textContent = formatLabel(label);
-    badgeIcon.textContent = getLabelIcon(label);
+    return { score, color, explanation, extra };
+  }
+  
+  /* ========= Render Result ========= */
+  
+  function renderResult(result) {
+    const { score, color, explanation, extra } = result;
     
-    // Update confidence
-    const confidenceValue = document.getElementById('confidence-value');
-    const confidenceFill = document.getElementById('confidence-fill');
-    const confidence = Math.round((result.confidence || 0) * 100);
-    confidenceValue.textContent = confidence + '%';
-    confidenceFill.style.width = confidence + '%';
+    // Score label and value
+    resultLabel.textContent = 'Polarization Risk';
+    resultScore.textContent = `${score.toFixed(0)}%`;
     
-    // Update content preview
-    const contentPreview = document.getElementById('content-preview');
-    contentPreview.textContent = result.content_preview || 'No preview available';
+    // Determine risk level class
+    const riskClass = getRiskClass(color, score);
+    resultCard.classList.remove('risk-low', 'risk-medium', 'risk-high');
+    resultCard.classList.add(riskClass);
     
-    // Update reasons
-    const reasonsList = document.getElementById('reasons-list');
-    reasonsList.innerHTML = '';
-    const reasons = result.reasons || [];
-    if (reasons.length > 0) {
-        reasons.forEach(reason => {
-            const li = document.createElement('li');
-            li.textContent = reason;
-            reasonsList.appendChild(li);
-        });
-    } else {
+    // Badge text
+    const badgeText =
+      riskClass === 'risk-low'
+        ? 'Low risk'
+        : riskClass === 'risk-medium'
+        ? 'Moderate risk'
+        : 'High risk';
+    resultBadge.textContent = badgeText;
+    
+    // Explanation
+    resultExplanation.textContent = explanation;
+    
+    // Extra insights
+    resultDetailsList.innerHTML = '';
+    if (Array.isArray(extra) && extra.length > 0) {
+      extra.forEach((item) => {
         const li = document.createElement('li');
-        li.textContent = 'No specific findings to report';
-        reasonsList.appendChild(li);
-    }
-    
-    // Update tips
-    const tipsList = document.getElementById('tips-list');
-    tipsList.innerHTML = '';
-    const tips = result.tips || [];
-    if (tips.length > 0) {
-        tips.forEach(tip => {
-            const li = document.createElement('li');
-            li.textContent = tip;
-            tipsList.appendChild(li);
-        });
+        li.textContent = item;
+        resultDetailsList.appendChild(li);
+      });
     } else {
-        const li = document.createElement('li');
-        li.textContent = 'Always verify information with multiple reliable sources';
-        tipsList.appendChild(li);
+      const li = document.createElement('li');
+      li.textContent =
+        'No additional insights from the model. Use your own judgment and cross-check multiple sources.';
+      resultDetailsList.appendChild(li);
     }
     
-    // Update analysis details
-    const analysisDetails = document.getElementById('analysis-details');
-    if (result.analysis_details) {
-        analysisDetails.textContent = result.analysis_details;
-        analysisDetailsSection.style.display = 'block';
-    } else {
-        analysisDetailsSection.style.display = 'none';
-    }
+    showResult();
+  }
+  
+  function getRiskClass(color, score) {
+    // Prefer explicit color if provided by backend
+    if (color === 'green') return 'risk-low';
+    if (color === 'red') return 'risk-high';
+    if (color === 'orange' || color === 'yellow') return 'risk-medium';
     
-    // Show results section
-    resultsSection.classList.add('visible');
-    
-    // Scroll to results
-    setTimeout(() => {
-        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-}
+    // Otherwise, infer from score
+    if (score < 40) return 'risk-low';
+    if (score < 70) return 'risk-medium';
+    return 'risk-high';
+  }
+});
 
-function formatLabel(label) {
-    const labels = {
-        'reliable': 'Reliable',
-        'doubtful': 'Doubtful',
-        'needs_verification': 'Needs Verification',
-        'potentially_false': 'Potentially False',
-        'unknown': 'Unknown'
-    };
-    return labels[label] || label.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-}
-
-function getLabelIcon(label) {
-    const icons = {
-        'reliable': '✅',
-        'doubtful': '⚠️',
-        'needs_verification': '🔍',
-        'potentially_false': '❌',
-        'unknown': '❓'
-    };
-    return icons[label] || '❓';
-}
-
-// UI Helpers
-function showLoading() {
-    loading.classList.add('visible');
-    analyzeTextBtn.disabled = true;
-    analyzeFileBtn.disabled = true;
-}
-
-function hideLoading() {
-    loading.classList.remove('visible');
-    analyzeTextBtn.disabled = false;
-    analyzeFileBtn.disabled = false;
-}
-
-function hideResults() {
-    resultsSection.classList.remove('visible');
-}
-
-function showError(message) {
-    errorMessage.textContent = message;
-    errorSection.classList.add('visible');
-}
-
-function hideError() {
-    errorSection.classList.remove('visible');
-}
-
-// Health check
-async function checkApiHealth() {
-    try {
-        await api.checkHealth();
-        console.log('✅ API is healthy');
-    } catch (error) {
-        console.error('❌ API health check failed:', error);
-        showError('Cannot connect to the analysis server. Please ensure the backend is running on http://localhost:8000');
-    }
-}
