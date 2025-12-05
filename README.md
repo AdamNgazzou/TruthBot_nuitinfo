@@ -38,76 +38,128 @@ TruthBot
 ### Backend Setup
 
 1. **Clone and navigate to backend:**
+
 ```bash
 cd backend
 ```
 
 2. **Create virtual environment:**
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 3. **Install dependencies:**
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. **Configure environment:**
+
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` and add your Gemini API key:
+
 ```
 GEMINI_API_KEY=your_api_key_here
 ```
 
 5. **Install Tesseract OCR:**
+
 - **Ubuntu/Debian:** `sudo apt-get install tesseract-ocr`
 - **macOS:** `brew install tesseract`
 - **Windows:** Download from [GitHub](https://github.com/UB-Mannheim/tesseract/wiki)
 
 6. **Run the server:**
+
 ```bash
 python -m app.main
 ```
 
 Server runs at: `http://localhost:8000`
 
-### Frontend Setup
+### Frontend Setup (Next.js / Static Frontend)
 
-1. **Navigate to frontend:**
-```bash
-cd frontend
-```
+This project contains a modern frontend in the `frontend/` folder. It can be served as a static site (simple HTML/CSS/JS) or run as a Next.js app depending on which files you use. Follow the steps below for the recommended Next.js development workflow and alternate quick static options.
 
-2. **Open with a local server:**
+Prerequisites
 
-Option 1 - Python:
-```bash
-python -m http.server 3000
-```
+- Node.js 14+ (recommend 16+ or 18+)
+- npm, yarn or pnpm (pnpm is used in this repository)
 
-Option 2 - Node.js:
-```bash
-npx serve -p 3000
-```
+Development (recommended - Next.js)
 
-Option 3 - VS Code Live Server extension
+1. Open a terminal and change to the frontend folder:
+   - PowerShell: `cd frontend`
+2. Install dependencies:
+   - pnpm: `pnpm install`
+   - npm: `npm install`
+   - yarn: `yarn install`
+3. Start the development server:
 
-3. **Access the app:**
-Open `http://localhost:3000` in your browser
+   - pnpm: `pnpm dev`
+   - npm: `npm run dev`
+   - yarn: `yarn dev`
+
+   The dev server will typically run on `http://localhost:3000`.
+
+Environment / API configuration
+
+- The frontend talks to the backend API. If you run the backend locally, ensure the API base URL in the frontend points to `http://localhost:8000` (or the host/port where the backend runs).
+- Update the API URL in `frontend/components/api-endpoints.tsx` or in any `API_BASE_URL` constant used by the frontend. You may also create a `.env.local` file in the `frontend/` folder for Next.js with values like:
+
+  NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+
+Build and Production
+
+1. Build the frontend:
+   - pnpm: `pnpm build`
+   - npm: `npm run build`
+2. Start the production server (Next.js):
+   - pnpm: `pnpm start`
+   - npm: `npm run start`
+
+Or export a static site (if applicable):
+
+- `npm run export` will generate a static `out/` folder that can be served by any static server.
+
+Static Quick Preview (simple HTML/CSS/JS)
+
+- If you prefer a quick static preview of the legacy frontend pages, you can serve the `frontend/` folder with a simple HTTP server:
+  - Python: `python -m http.server 3000`
+  - Node: `npx serve -p 3000` (install `serve` if needed)
+
+CORS and Backend Connectivity
+
+- If the frontend cannot reach the backend, confirm CORS is configured in `backend/app/config.py` and that `GEMINI_API_KEY` and other backend env values are set.
+- When running frontend and backend on different hosts/ports, add the frontend origin to the backend CORS allow list.
+
+Troubleshooting
+
+- Dev server fails to start: delete `node_modules` and lockfile (`pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock`) then reinstall.
+- API requests fail with network errors: ensure backend is running and `NEXT_PUBLIC_API_BASE_URL` points to the correct address.
+- Static assets not loading: confirm paths in `public/` and `next.config.mjs` if using Next.js basePath.
+
+Access the app
+
+- Development: `http://localhost:3000`
+- Production (example): `http://your-host:3000`
 
 ## 📖 API Documentation
 
 Once the backend is running, visit:
+
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
 ### API Endpoints
 
 #### Analyze Text
+
 ```bash
 POST /api/analyze/text
 Content-Type: application/json
@@ -118,6 +170,7 @@ Content-Type: application/json
 ```
 
 #### Analyze File
+
 ```bash
 POST /api/analyze/file
 Content-Type: multipart/form-data
@@ -126,6 +179,7 @@ file: [your file]
 ```
 
 #### Health Check
+
 ```bash
 GET /api/health
 ```
@@ -133,12 +187,14 @@ GET /api/health
 ## 🎯 Usage
 
 ### Text Analysis
+
 1. Click "Text Analysis" tab
 2. Paste your content
 3. Click "Analyze Text"
 4. View detailed results
 
 ### File Analysis
+
 1. Click "File Upload" tab
 2. Drag & drop or browse for file
 3. Click "Analyze File"
@@ -166,6 +222,7 @@ GET /api/health
 ## 🔧 Configuration
 
 Edit `backend/app/config.py` or `.env` for:
+
 - Maximum file size
 - Allowed file extensions
 - CORS origins
@@ -174,6 +231,7 @@ Edit `backend/app/config.py` or `.env` for:
 ## 🛠️ Technology Stack
 
 ### Backend
+
 - **FastAPI**: Modern Python web framework
 - **Gemini AI**: Google's advanced language model
 - **PyPDF2**: PDF text extraction
@@ -182,6 +240,7 @@ Edit `backend/app/config.py` or `.env` for:
 - **Pydantic**: Data validation
 
 ### Frontend
+
 - **HTML5/CSS3**: Modern web standards
 - **Vanilla JavaScript**: No framework dependencies
 - **Responsive Design**: Works on all devices
@@ -233,6 +292,7 @@ truthbot/
 ### Styling
 
 Modify `frontend/css/style.css` to customize:
+
 - Color scheme (CSS variables)
 - Layout and spacing
 - Animations and transitions
@@ -240,19 +300,34 @@ Modify `frontend/css/style.css` to customize:
 ## 🐛 Troubleshooting
 
 ### Backend won't start
+
 - Ensure Python 3.8+ is installed
 - Check that all dependencies are installed
 - Verify `.env` file has valid Gemini API key
 
 ### File analysis fails
+
 - Ensure Tesseract OCR is installed
 - Check file permissions in uploads directory
 - Verify file size is under limit
 
 ### Frontend can't connect to backend
+
 - Ensure backend is running on port 8000
 - Check CORS settings in `config.py`
 - Update API_BASE_URL in `frontend/js/api.js` if needed
+
+### Dev server fails to start
+
+- Delete `node_modules` and lockfile (`pnpm-lock.yaml`, `package-lock.json`, or `yarn.lock`) then reinstall.
+
+### API requests fail with network errors
+
+- Ensure backend is running and `NEXT_PUBLIC_API_BASE_URL` points to the correct address.
+
+### Static assets not loading
+
+- Confirm paths in `public/` and `next.config.mjs` if using Next.js basePath.
 
 ## 📝 License
 
@@ -268,4 +343,4 @@ For questions or issues, please open an issue on GitHub.
 
 ---
 
-**Built with ❤️ for Nuit de l'Info 2024** 
+**Built with ❤️ for Nuit de l'Info 2024**
