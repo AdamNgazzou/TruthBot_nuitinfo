@@ -1,5 +1,5 @@
 # Git ignore rules
-
+frontend1/
 # Python
 __pycache__/
 *.py[cod]
